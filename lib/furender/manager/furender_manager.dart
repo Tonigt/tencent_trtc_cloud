@@ -19,6 +19,7 @@ class FuRenderManager {
     return _manager!;
   }
 
+  // 禁止外部初始化
   FuRenderManager._();
 
   /// 数据源

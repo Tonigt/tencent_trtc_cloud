@@ -11,13 +11,22 @@ import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 
+import com.faceunity.core.entity.FUBundleData;
+import com.faceunity.core.enumeration.FUAITypeEnum;
+import com.faceunity.core.faceunity.FUAIKit;
+import com.faceunity.core.faceunity.FURenderKit;
+import com.faceunity.core.model.facebeauty.FaceBeauty;
+import com.faceunity.core.model.makeup.SimpleMakeup;
+import com.faceunity.core.utils.ThreadHelper;
 import com.google.gson.Gson;
+import com.tencent.faceunity.FURenderer;
 import com.tencent.liteav.audio.TXAudioEffectManager;
 import com.tencent.liteav.beauty.TXBeautyManager;
 import com.tencent.liteav.device.TXDeviceManager;
 import com.tencent.rtmp.TXLog;
 import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.tencent.trtc.TRTCCloud;
+import com.faceunity.core.model.bodyBeauty.BodyBeauty;
 import com.tencent.trtc.TRTCCloudDef;
 import com.tencent.trtc.TRTCCloudListener;
 import com.tencent.trtcplugin.listener.CustomTRTCCloudListener;
@@ -25,7 +34,9 @@ import com.tencent.trtcplugin.util.CommonUtil;
 import com.tencent.trtcplugin.view.TRTCCloudVideoPlatformView;
 import com.tencent.trtcplugin.view.TRTCCloudVideoSurfaceView;
 import com.tencent.trtcplugin.view.CustomRenderVideoFrame;
+import com.tencent.faceunity.checkbox.CheckGroupPlatformView;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,6 +44,7 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,6 +58,14 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugin.platform.PlatformViewRegistry;
 
 import io.flutter.view.TextureRegistry;
+
+enum _FuRenderChannel {
+    skin,
+    shape,
+    filter,
+    makeUp,
+    bodyBeauty
+}
 
 /**
  * 安卓中间层-腾讯云视频通话功能的主要接口类
@@ -66,6 +86,23 @@ public class TRTCCloudPlugin implements FlutterPlugin, MethodCallHandler {
 
     private TextureRegistry.SurfaceTextureEntry surfaceEntry;
     private TextureRegistry textureRegistry;
+    private  _FuRenderChannel type;
+
+    /**
+     * 相芯-美体*/
+    private BodyBeauty bodyBeauty() {
+        return FURenderKit.getInstance().getBodyBeauty();
+    }
+    /**
+     * 相芯-补妆*/
+    private SimpleMakeup makeUp(){
+        return FURenderKit.getInstance().getMakeup();
+    }
+    /**
+     * 相芯-美颜*/
+    private FaceBeauty beauty(){
+        return FURenderKit.getInstance().getFaceBeauty();
+    }
 
     public TRTCCloudPlugin() {
     }
@@ -84,6 +121,8 @@ public class TRTCCloudPlugin implements FlutterPlugin, MethodCallHandler {
                 new TRTCCloudVideoPlatformView(context, messenger));
         registry.registerViewFactory(
                 TRTCCloudVideoSurfaceView.SIGN,
+                new TRTCCloudVideoSurfaceView(context, messenger));
+        registry.registerViewFactory(TRTCCloudVideoSurfaceView.bottomBar,
                 new TRTCCloudVideoSurfaceView(context, messenger));
 
         this.textureRegistry = textureRegistrya;
@@ -128,6 +167,345 @@ public class TRTCCloudPlugin implements FlutterPlugin, MethodCallHandler {
             TXLog.e(TAG, "|method=" + call.method + "|arguments=" + call.arguments + "|error=" + e);
         } catch (Exception e) {
             TXLog.e(TAG, "|method=" + call.method + "|arguments=" + call.arguments + "|error=" + e);
+        }
+    }
+
+    private void FUSetUp(MethodCall call, Result result) {
+        HashMap map = (HashMap)call.arguments();
+        ArrayList<Integer> auth = (ArrayList<Integer>) map.get("authPack");
+        try {
+            FURenderer.getInstance().setup(trtcContext, auth);
+            if (map.containsKey("maxFace")) {
+                Integer maxFace = (Integer) map.get("maxFace");
+                if (maxFace != null) {
+                    FUAIKit.getInstance().setMaxFaces(maxFace);
+                }
+            }
+            String key = "skin";
+            if (map.containsKey(key) && map.get(key) instanceof HashMap) {
+                HashMap skinMap = (HashMap) map.get(key);
+                skin(skinMap);
+            }
+            key = "shape";
+            if (map.containsKey(key) && map.get(key) instanceof HashMap) {
+                HashMap shapeMap = (HashMap) map.get(key);
+                shape(shapeMap);
+            }
+            key = "filter";
+            if (map.containsKey(key) && map.get(key) instanceof HashMap) {
+                HashMap filterMap = (HashMap) map.get(key);
+                filter(filterMap);
+            }
+            key = "makeUp";
+            if (map.containsKey(key) && map.get(key) instanceof HashMap) {
+                HashMap makeUpMap = (HashMap) map.get(key);
+                makeUp(makeUpMap);
+            }
+            key = "bodyBeauty";
+            if (map.containsKey(key) && map.get(key) instanceof HashMap) {
+                HashMap bodyBeautyMap = (HashMap) map.get(key);
+                bodyBeauty(bodyBeautyMap);
+            }
+
+
+        }catch (Exception e) {
+
+        }
+    }
+
+    private void resetValue(){
+        FUAIKit.getInstance().setMaxFaces(4);
+        switch (this.type) {
+            case makeUp:
+                if (this.makeUp() == null)
+                    return;
+                this.makeUp().setEnable(true);
+//                FURenderKit.getInstance().setMakeup(this.makeUp());
+                break;
+            case filter:
+            case skin:
+            case shape:
+                if (this.beauty() == null)
+                    return;
+                this.beauty().setEnable(true);
+//                FURenderKit.getInstance().setFaceBeauty(this.beauty());
+                break;
+            case bodyBeauty:
+                if (this.bodyBeauty() == null)
+                    return;
+                this.bodyBeauty().setEnable(true);
+//                FURenderKit.getInstance().setBodyBeauty(this.bodyBeauty());
+                break;
+        }
+    }
+    private void skin(MethodCall call,Result result){
+        skin(call.arguments());
+        result.success(null);
+    }
+
+    /**
+     * 相芯-美肤*/
+    private void skin(HashMap map){
+        if (this.type != null && this.type != _FuRenderChannel.skin) {
+            this.type = _FuRenderChannel.skin;
+            this.resetValue();
+        }else if (this.type == null) {
+            this.type = _FuRenderChannel.skin;
+            this.resetValue();
+        }
+        String key = "blurLevel";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setBlurIntensity(value);
+        }
+
+        key = "colorLevel";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setColorIntensity(value);
+        }
+        key = "redLevel";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setRedIntensity(value);
+        }
+        key = "sharpen";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setSharpenIntensity(value);
+        }
+        key = "eyeBright";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setEyeBrightIntensity(value);
+        }
+        key = "toothWhiten";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setToothIntensity(value);
+        }
+        key = "removePouchStrength";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setRemovePouchIntensity(value);
+        }
+        key = "removeNasolabialFoldsStrength";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setRemoveLawPatternIntensity(value);
+        }
+    }
+
+    private void shape(MethodCall call,Result result){
+        shape(call.arguments());
+        result.success(null);
+    }
+    /**
+     * 相芯-美型*/
+    private void shape(HashMap map) {
+        if (this.type != null && this.type != _FuRenderChannel.shape) {
+            this.type = _FuRenderChannel.shape;
+            this.resetValue();
+        }else if (this.type == null) {
+            this.type = _FuRenderChannel.shape;
+            this.resetValue();
+        }
+        String key = "cheekThinning";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setCheekThinningIntensity(value);
+        }
+        key = "cheekV";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setCheekVIntensity(value);
+        }
+        key = "cheekNarrow";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setCheekNarrowIntensity(value);
+        }
+        key = "cheekSmall";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setCheekSmallIntensity(value);
+        }
+        key = "intensityCheekbones";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setCheekBonesIntensity(value);
+        }
+        key = "intensityLowerJaw";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setLowerJawIntensity(value);
+        }
+        key = "eyeEnlarging";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setEyeEnlargingIntensity(value);
+        }
+        key = "intensityEyeCircle";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setEyeCircleIntensity(value);
+        }
+        key = "intensityChin";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setChinIntensity(value);
+        }
+        key = "intensityForehead";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setForHeadIntensity(value);
+        }
+        key = "intensityNose";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setNoseIntensity(value);
+        }
+        key = "intensityMouth";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setMouthIntensity(value);
+        }
+        key = "intensityCanthus";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setCanthusIntensity(value);
+        }
+        key = "intensityEyeSpace";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setEyeSpaceIntensity(value);
+        }
+        key = "intensityEyeRotate";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setEyeRotateIntensity(value);
+        }
+        key = "intensityLongNose";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setLongNoseIntensity(value);
+        }
+        key = "intensityPhiltrum";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setPhiltrumIntensity(value);
+        }
+        key = "intensitySmile";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setSmileIntensity(value);
+        }
+    }
+
+    private void filter(MethodCall call,Result result){
+        filter(call.arguments());
+        result.success(null);
+    }
+    /**
+     * 滤镜*/
+    private void filter(HashMap map) {
+        if (this.type != null && this.type != _FuRenderChannel.filter) {
+            this.type = _FuRenderChannel.filter;
+            this.resetValue();
+        }else if (this.type == null) {
+            this.type = _FuRenderChannel.filter;
+            this.resetValue();
+        }
+        String key = "imageName";
+        if (map.containsKey(key) && map.get(key) instanceof String) {
+            String value = (String) map.get(key);
+            this.beauty().setFilterName(value);
+        }
+        key = "filterLevel";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.beauty().setFilterIntensity(value);
+        }
+    }
+
+    private void makeUp(MethodCall call,Result result){
+        makeUp(call.arguments());
+        result.success(null);
+    }
+    /**
+     * 相芯-补妆*/
+    private void makeUp(HashMap map) {
+        if (this.type != null && this.type != _FuRenderChannel.makeUp) {
+            this.type = _FuRenderChannel.makeUp;
+            this.resetValue();
+        }else if (this.type == null) {
+            this.type = _FuRenderChannel.makeUp;
+            this.resetValue();
+        }
+        String key = "imageName";
+        if (map.containsKey(key) && map.get(key) instanceof String) {
+            String value = (String) map.get(key);
+            if (value == null) {
+                this.makeUp().setCombinedConfig(null);
+                return;
+            }
+            this.makeUp().setCombinedConfig(new FUBundleData("makeup/"+ value + ".bundle"));
+        }
+        key = "intensity";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.makeUp().setMakeupIntensity(value);
+        }
+    }
+
+    private void bodyBeauty(MethodCall call,Result result){
+        bodyBeauty(call.arguments());
+        result.success(null);
+    }
+    /**
+     * 相芯-美体*/
+    private void bodyBeauty(HashMap map){
+        if (this.type != null && this.type != _FuRenderChannel.bodyBeauty) {
+            this.type = _FuRenderChannel.bodyBeauty;
+            this.resetValue();
+        }else if (this.type == null) {
+            this.type = _FuRenderChannel.bodyBeauty;
+            this.resetValue();
+        }
+        String key = "bodySlimStrength";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.bodyBeauty().setBodySlimIntensity(value);
+        }
+        key = "legSlimStrength";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.bodyBeauty().setLegSlimIntensity(value);
+        }
+        key = "waistSlimStrength";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.bodyBeauty().setWaistSlimIntensity(value);
+        }
+        key = "shoulderSlimStrength";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.bodyBeauty().setShoulderSlimIntensity(value);
+        }
+        key = "bodySlimStrength";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.bodyBeauty().setBodySlimIntensity(value);
+        }
+        key = "headSlim";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.bodyBeauty().setHeadSlimIntensity(value);
+        }
+        key = "legSlim";
+        if (map.containsKey(key) && map.get(key) instanceof Double) {
+            Double value = (Double) map.get(key);
+            this.bodyBeauty().setLegSlimIntensity(value);
         }
     }
 

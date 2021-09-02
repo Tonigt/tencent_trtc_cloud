@@ -8,9 +8,10 @@ import 'trtc_cloud_def.dart';
 import 'tx_beauty_manager.dart';
 import 'tx_audio_effect_manager.dart';
 import 'tx_device_manager.dart';
+import 'furender/furender.dart';
 
 /// 腾讯云视频通话功能的主要接口类
-class TRTCCloud {
+class TRTCCloud with FurenderImplement {
   static TRTCCloud? _trtcCloud;
 
   static const MethodChannel _channel = const MethodChannel('trtcCloudChannel');
@@ -20,7 +21,7 @@ class TRTCCloud {
   /// 创建 TRTCCloud 单例。
   static Future<TRTCCloud?> sharedInstance() async {
     if (_trtcCloud == null) {
-      _trtcCloud = new TRTCCloud();
+      _trtcCloud = new TRTCCloud()..setChannel(_channel);
       await _channel.invokeMethod('sharedInstance');
     }
     return _trtcCloud;
@@ -1126,4 +1127,9 @@ class TRTCCloud {
       "jsonStr": jsonStr,
     });
   }
+  //
+  // /// 启用美颜
+  // Future<void> setUpBeauty() async{
+  //   return _channel.invokeMethod("setUpBeauty", {});
+  // }
 }

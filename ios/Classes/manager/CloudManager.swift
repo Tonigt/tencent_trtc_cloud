@@ -7,10 +7,12 @@
 
 import Foundation
 import TXLiteAVSDK_TRTC
+import FURenderKit
 
-class CloudManager {
+class CloudManager: NSObject {
     private var tRegistrar: FlutterPluginRegistrar?;
     private var _textures: FlutterTextureRegistry?;
+    private var _mContext: EAGLContext?;
     init(registrar: FlutterPluginRegistrar?){
         tRegistrar = registrar;
         _textures = registrar?.textures();
@@ -844,14 +846,23 @@ class CloudManager {
     */
     public func setLocalVideoRenderListener(call: FlutterMethodCall, result: @escaping FlutterResult) {
         if let frontCamera = CommonUtils.getParamByKey(call: call, result: result, param: "isFront") as? Bool{
-            var textureID :Int64? = 0;
-            let render:TencentVideoTextureRender = TencentVideoTextureRender(frameCallback: ({
-                self._textures?.textureFrameAvailable(textureID!);
-            }));
-            txCloudManager.setLocalVideoRenderDelegate(render, pixelFormat: TRTCVideoPixelFormat._NV12, bufferType: TRTCVideoBufferType.pixelBuffer);
-            txCloudManager.startLocalPreview(frontCamera, view: nil);
-            textureID = self._textures?.register(render);
-            result(textureID);
+//            var textureID :Int64? = 0;
+//            let render:TencentVideoTextureRender = TencentVideoTextureRender(frameCallback: ({
+//                self._textures?.textureFrameAvailable(textureID!);
+//            }));
+//            txCloudManager.setLocalVideoProcessDelegete(self, pixelFormat: ._Texture_2D, bufferType: .texture)
+//            let data = try? JSONSerialization.data(withJSONObject: [
+//                "api": "setCustomRenderMode",
+//                "params": ["mode": 1]
+//            ], options: [])
+//            let str = String(data: data!, encoding: .utf8)
+//            txCloudManager.callExperimentalAPI(str)
+//            txCloudManager.setLocalVideoRenderDelegate(self, pixelFormat: ._NV12, bufferType: .pixelBuffer)
+//            txCloudManager.startLocalAudio(.default)
+////            txCloudManager.setLocalVideoRenderDelegate(render, pixelFormat: TRTCVideoPixelFormat._NV12, bufferType: TRTCVideoBufferType.pixelBuffer);
+//            txCloudManager.startLocalPreview(frontCamera, view: nil);
+//            textureID = self._textures?.register(render);
+            result(0);
         }
     }
 
@@ -872,5 +883,115 @@ class CloudManager {
 			textureID = self._textures?.register(render);
             result(textureID);
         }
+    }
+}
+
+extension CloudManager: TRTCVideoFrameDelegate {
+    func onProcessVideoFrame(_ srcFrame: TRTCVideoFrame, dstFrame: TRTCVideoFrame) -> UInt32 {
+        _mContext = EAGLContext.current()
+        
+//        if FUGLContext.shareGLContext().currentGLContext != _mContext {
+//            FUGLContext.shareGLContext().setCustomGLContext(_mContext)
+//        }
+        if FUManager.share().isRender {
+            let input: FURenderInput = FURenderInput()
+            input.renderConfig.imageOrientation = FUImageOrientationUP
+            input.renderConfig.isFromFrontCamera = true
+            input.renderConfig.stickerFlipH = true//!self.isFrontCamera;
+            let tex: FUTexture = FUTexture.init(ID: srcFrame.textureId, size: CGSize.init(width: CGFloat(srcFrame.width), height: CGFloat(srcFrame.height)))
+            // CGFloat(srcFrame.width), CGFloat(srcFrame.height)
+//                (srcFrame.textureId, CGSizeMake(srcFrame.width, srcFrame.height));
+            input.texture = tex
+            //开启重力感应，内部会自动计算正确方向，设置fuSetDefaultRotationMode，无须外面设置
+            input.renderConfig.gravityEnable = true
+            input.renderConfig.textureTransform = CCROT0_FLIPVERTICAL
+            let output: FURenderOutput = FURenderKit.share().render(with: input)
+            dstFrame.textureId = output.texture.ID
+            if (output.texture.ID != 0) {
+                return output.texture.ID
+            }
+        }
+        return 0
+    }
+}
+
+
+extension CloudManager: TRTCVideoRenderDelegate {
+    func onRenderVideoFrame(_ frame: TRTCVideoFrame, userId: String?, streamType: TRTCVideoStreamType) {
+        
+        let input: FURenderInput = FURenderInput()
+        input.renderConfig.imageOrientation = FUImageOrientationUP
+        input.pixelBuffer = frame.pixelBuffer
+        input.renderConfig.gravityEnable = true
+        input.renderConfig.readBackToPixelBuffer = true
+        FURenderKit.share().render(with: input)
+        
+//
+//        let pixelBuffer: CVPixelBuffer? = frame.pixelBuffer
+//        let input: FURenderInput = FURenderInput()
+//        input.renderConfig.imageOrientation = FUImageOrientationUP
+//        input.renderConfig.isFromFrontCamera = txCloudManager.getDeviceManager().isFrontCamera()
+//        input.pixelBuffer = frame.pixelBuffer
+//        input.renderConfig.gravityEnable = true
+//        let outPut: FURenderOutput = FURenderKit.share().render(with: input)
+//        let resultBuffer = outPut.pixelBuffer
+//        if frame.pixelFormat == ._NV12 {
+//            NV12PixelBufferCopySrcBuffer(resultBuffer!, pixelBuffer!)
+//        }else if frame.pixelFormat == ._32BGRA {
+//            rgbPixelBufferCopySrcBuffer(resultBuffer!, pixelBuffer!)
+//        }else {
+//
+//        }
+    }
+    
+    func NV12PixelBufferCopySrcBuffer(_ srcPixelBuffer: CVPixelBuffer, _ despixelBuffer: CVPixelBuffer) {
+        let flags = CVPixelBufferLockFlags(rawValue: 0)
+        CVPixelBufferLockBaseAddress(srcPixelBuffer, flags)
+        CVPixelBufferLockBaseAddress(despixelBuffer, flags)
+        let desStrdeY = CVPixelBufferGetBaseAddressOfPlane(despixelBuffer, 0)
+        let desStrdeUV = CVPixelBufferGetBaseAddressOfPlane(despixelBuffer, 1)
+        
+        let srcStrdeY = CVPixelBufferGetBaseAddressOfPlane(srcPixelBuffer, 0)
+        let srcStrdeUV = CVPixelBufferGetBaseAddressOfPlane(srcPixelBuffer, 1)
+        
+        let desWidth = CVPixelBufferGetWidth(despixelBuffer)
+        
+        let srcWidth = CVPixelBufferGetWidth(srcPixelBuffer)
+        let srcHeight = CVPixelBufferGetHeight(srcPixelBuffer)
+        
+        let w_nv21 = ((srcWidth + 3) >> 2)
+        let h_uv = ((srcHeight + 1) >> 1)
+        
+        for i in 0..<srcHeight {
+            memcpy(desStrdeY! + desWidth * i, srcStrdeY! + (w_nv21 * 4) * i, srcWidth)
+        }
+        
+        let des_w_uv = 2 * ((desWidth + 1) >> 1)
+        let src_w_uv = 2 * ((srcWidth + 1) >> 1)
+        for i in 0..<h_uv {
+            memcpy(desStrdeUV! + i * des_w_uv, srcStrdeUV! + i * w_nv21 * 4, src_w_uv)
+        }
+        CVPixelBufferUnlockBaseAddress(despixelBuffer, flags)
+        CVPixelBufferUnlockBaseAddress(srcPixelBuffer, flags)
+    }
+    
+    
+    func rgbPixelBufferCopySrcBuffer(_ srcPixelBuffer: CVPixelBuffer, _ desPixelBuffer: CVPixelBuffer) {
+        let flags = CVPixelBufferLockFlags(rawValue: 0)
+        CVPixelBufferLockBaseAddress(srcPixelBuffer, flags)
+        CVPixelBufferLockBaseAddress(desPixelBuffer, flags)
+        
+        let srcBufferAddress = CVPixelBufferGetBaseAddress(srcPixelBuffer)
+        let srcStride = CVPixelBufferGetBytesPerRow(srcPixelBuffer)
+        let srcHeight = CVPixelBufferGetHeight(srcPixelBuffer)
+        let desBufferAddress = CVPixelBufferGetBaseAddress(desPixelBuffer)
+        let desStride = CVPixelBufferGetBytesPerRow(desPixelBuffer)
+        
+        for i in 0..<srcHeight {
+            memcpy(desBufferAddress! + i * desStride, srcBufferAddress! + i * srcStride , desStride)
+        }
+        
+        CVPixelBufferUnlockBaseAddress(desPixelBuffer, flags)
+        CVPixelBufferUnlockBaseAddress(srcPixelBuffer, flags)
     }
 }

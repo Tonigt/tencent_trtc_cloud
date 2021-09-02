@@ -3,6 +3,7 @@ version '1.0'
 
 buildscript {
     repositories {
+        maven { url 'http://maven.faceunity.com/repository/maven-public/' }
         google()
         jcenter()
     }
@@ -14,6 +15,7 @@ buildscript {
 
 rootProject.allprojects {
     repositories {
+        maven { url 'http://maven.faceunity.com/repository/maven-public/' }
         // maven { url "https://mirrors.tencent.com/repository/maven/liteavsdk" }
         google()
         jcenter()
@@ -26,7 +28,7 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 19
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters "armeabi", "armeabi-v7a", "arm64-v8a"
@@ -39,8 +41,17 @@ android {
     }
 
     dependencies {
+        configurations.all {
+            resolutionStrategy.cacheChangingModulesFor 0,'seconds'
+            resolutionStrategy.cacheDynamicVersionsFor 0,'seconds'
+        }
         api 'com.tencent.liteav:LiteAVSDK_TRTC:8.7.10102'
         implementation 'com.google.code.gson:gson:2.8.6'
+        api 'com.faceunity:core:7.4.1.0'
+        api 'com.faceunity:model:7.4.1.0'
+        implementation "com.android.support:appcompat-v7:26.0.1"
+        implementation "com.android.support:recyclerview-v7:26.0.1"
+//        implementation 'com.faceunity:nama:7.4.0-lite'
     }
 
     packagingOptions{
@@ -50,7 +61,13 @@ android {
         doNotStrip "*/x86/libYTCommon.so"
         doNotStrip "*/arm64-v8a/libYTCommon.so"
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
+
 dependencies {
     // implementation fileTree(dir:"./libs",include:['*.jar','*.aar'])
 }

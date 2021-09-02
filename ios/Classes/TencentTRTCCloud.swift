@@ -1,5 +1,19 @@
 import Flutter
 import TXLiteAVSDK_TRTC
+import FURenderKit
+
+enum FuRenderChannel: String {
+    
+    /// 插件启动
+    case FUSetUp
+    
+    
+    case skin
+    case shape
+    case filter
+    case makeUp
+    case bodyBeauty
+}
 
 public class TencentTRTCCloud: NSObject, FlutterPlugin, TRTCCloudDelegate {
     
@@ -13,6 +27,8 @@ public class TencentTRTCCloud: NSObject, FlutterPlugin, TRTCCloudDelegate {
 	private var deviceManager: DeviceManager?;
 	
 	private var audioEffectManager: AudioEffectManager?;
+    
+    var type: FuRenderChannel?
 	
 	private var cloudManager: CloudManager?;
 	
@@ -35,6 +51,7 @@ public class TencentTRTCCloud: NSObject, FlutterPlugin, TRTCCloudDelegate {
 			viewFactory,
 			withId: TRTCCloudVideoPlatformViewFactory.SIGN
 		);
+        registrar.register(viewFactory, withId: "FuRenderKitBottomBar")
 	}
 	
 	public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -412,6 +429,33 @@ public class TencentTRTCCloud: NSObject, FlutterPlugin, TRTCCloudDelegate {
 		case "getMusicDurationInMS":
 			audioEffectManager!.getMusicDurationInMS(call: call, result: result);
 			break;
+        case FuRenderChannel.FUSetUp.rawValue:
+            furenderSetUp(call: call, result: result)
+        case FuRenderChannel.skin.rawValue:
+            if let map = call.arguments as? [String: Any] {
+                skinSetting(map: map)
+            }
+            result(nil)
+        case FuRenderChannel.shape.rawValue:
+            if let map = call.arguments as? [String: Any] {
+                shapeSetting(map: map)
+            }
+            result(nil)
+        case FuRenderChannel.filter.rawValue:
+            if let map = call.arguments as? [String: Any]{
+                filterSetting(map: map)
+            }
+            result(nil)
+        case FuRenderChannel.makeUp.rawValue:
+            if let map = call.arguments as? [String: Any] {
+                makeUpSetting(map: map)
+            }
+            result(nil)
+        case FuRenderChannel.bodyBeauty.rawValue:
+            if let map = call.arguments as? [String: Any] {
+                bodyBeauty(map: map)
+            }
+            result(nil)
 		default:
 			CommonUtils.logError(call: call, errCode: -1, errMsg: "method not Implemented");
 			result(FlutterMethodNotImplemented);

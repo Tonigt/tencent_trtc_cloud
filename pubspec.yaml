@@ -12,10 +12,14 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # 滑动条
+  another_xlider: 1.0.0
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
 flutter:
   plugin:
     platforms:
@@ -24,3 +28,10 @@ flutter:
         pluginClass: TRTCCloudPlugin
       ios:
         pluginClass: TencentTRTCCloud
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+  assets:
+    - assets/images/

@@ -34,7 +34,7 @@ class FuRenderManager {
       _datasource.settingParameter(value);
     }
     TRTCCloud.sharedInstance().then((value) {
-      value!._setUpFuRender(value,
+      value!._setUpFuRender(authPack,
           maxFaces: maxFace ?? 4,
           parameter: _datasource.toJson());
     });

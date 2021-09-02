@@ -7,6 +7,7 @@
 
 
 import FURenderKit
+import Flutter
 
 extension TencentTRTCCloud {
     /// 设置修改
@@ -24,34 +25,6 @@ extension TencentTRTCCloud {
     func furenderSetUp(call: FlutterMethodCall, result: @escaping FlutterResult) {
 //        if beauty == nil {
 
-            DispatchQueue.main.async {
-                
-                let facePath = Bundle.main.path(forResource: "ai_face_processor", ofType: "bundle")
-                let bodyPath = Bundle.main.path(forResource: "ai_human_processor", ofType: "bundle")
-                FUAIKit.loadAIMode(withAIType: FUAITYPE_HUMAN_PROCESSOR, dataPath: bodyPath!)
-                FUAIKit.loadAIMode(withAIType: FUAITYPE_FACEPROCESSOR, dataPath: facePath!)
-                /// Int32(0.5) = 0
-                FUAIKit.setFaceTrackParam("mouth_expression_more_flexible", value: 0)
-                
-                let makeUpBundle = Bundle.main.path(forResource: "face_makeup", ofType: "bundle")!
-                FURenderKit.share().makeup = FUMakeup.init(path: makeUpBundle, name: "face_makeup")
-
-                let bodyBundle = Bundle.main.path(forResource: "body_slim", ofType: "bundle")!
-                FURenderKit.share().bodyBeauty = FUBodyBeauty.init(path: bodyBundle, name: "body_slim")
-                
-                let bundle = Bundle.main.path(forResource: "face_beautification.bundle", ofType: nil)!
-                FURenderKit.share().beauty = FUBeauty(path: bundle, name: "FUBeauty")
-                
-//                self.makeUp?.isMakeupOn = true
-//                self.makeUp?.enable = false
-//                self.bodyBeauty?.debug = 0
-//                self.bodyBeauty?.enable = false
-//
-//                self.beauty?.heavyBlur = 0
-//                self.beauty?.blurType = 2
-//                self.beauty?.faceShape = 4
-//                self.beauty?.enable = true
-            }
 //        }
 
         
@@ -78,23 +51,55 @@ extension TencentTRTCCloud {
         if let maxFace = map["maxFace"] as? Int {
             FUAIKit.share().maxTrackFaces = Int32(maxFace)
         }
+        
+        DispatchQueue.main.async {[weak self] in
+            
+            let facePath = Bundle.main.path(forResource: "ai_face_processor", ofType: "bundle")
+            let bodyPath = Bundle.main.path(forResource: "ai_human_processor", ofType: "bundle")
+            FUAIKit.loadAIMode(withAIType: FUAITYPE_HUMAN_PROCESSOR, dataPath: bodyPath!)
+            FUAIKit.loadAIMode(withAIType: FUAITYPE_FACEPROCESSOR, dataPath: facePath!)
+            /// Int32(0.5) = 0
+            FUAIKit.setFaceTrackParam("mouth_expression_more_flexible", value: 0)
+            
+            let makeUpBundle = Bundle.main.path(forResource: "face_makeup", ofType: "bundle")!
+            FURenderKit.share().makeup = FUMakeup.init(path: makeUpBundle, name: "face_makeup")
 
-
-        //MARK: -原始参数设置
-        if let skinMap = map["skin"] as? [String: Any] {
-            skinSetting(map: skinMap)
-        }
-        if let shapeMap = map["shape"] as? [String: Any] {
-            shapeSetting(map: shapeMap)
-        }
-        if let filterMap = map["filter"] as? [String: Any] {
-            filterSetting(map: filterMap)
-        }
-        if let makeUpMap = map["makeUp"] as? [String: Any] {
-            makeUpSetting(map: makeUpMap)
-        }
-        if let bodyBeautyMap = map["bodyBeauty"] as? [String: Any] {
-            bodyBeauty(map: bodyBeautyMap)
+            let bodyBundle = Bundle.main.path(forResource: "body_slim", ofType: "bundle")!
+            FURenderKit.share().bodyBeauty = FUBodyBeauty.init(path: bodyBundle, name: "body_slim")
+            
+            let bundle = Bundle.main.path(forResource: "face_beautification.bundle", ofType: nil)!
+            FURenderKit.share().beauty = FUBeauty(path: bundle, name: "FUBeauty")
+            
+            guard let strongSelf = self else {
+                return
+            }
+            
+            //MARK: -原始参数设置
+            if let skinMap = map["skin"] as? [String: Any] {
+                strongSelf.skinSetting(map: skinMap)
+            }
+            if let shapeMap = map["shape"] as? [String: Any] {
+                strongSelf.shapeSetting(map: shapeMap)
+            }
+            if let filterMap = map["filter"] as? [String: Any] {
+                strongSelf.filterSetting(map: filterMap)
+            }
+            if let makeUpMap = map["makeUp"] as? [String: Any] {
+                strongSelf.makeUpSetting(map: makeUpMap)
+            }
+            if let bodyBeautyMap = map["bodyBeauty"] as? [String: Any] {
+                strongSelf.bodyBeauty(map: bodyBeautyMap)
+            }
+            
+//                self.makeUp?.isMakeupOn = true
+//                self.makeUp?.enable = false
+//                self.bodyBeauty?.debug = 0
+//                self.bodyBeauty?.enable = false
+//
+//                self.beauty?.heavyBlur = 0
+//                self.beauty?.blurType = 2
+//                self.beauty?.faceShape = 4
+//                self.beauty?.enable = true
         }
     }
     

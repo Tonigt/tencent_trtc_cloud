@@ -103,7 +103,8 @@ class _FuRenderDatasource {
   /// 初始化
   void settingParameter(Map<String, dynamic> map){
     datas.forEach((element) {
-      element.settingParameter(map[element.type.rawValue]);
+      if (map.containsKey(element.type.rawValue))
+        element.settingParameter(map[element.type.rawValue]);
     });
   }
 }

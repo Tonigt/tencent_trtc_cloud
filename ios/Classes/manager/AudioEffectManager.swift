@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import TXLiteAVSDK_TRTC
+
 
 class AudioEffectManager {
 	private var txAudioEffectManager: TXAudioEffectManager = TRTCCloud.sharedInstance().getAudioEffectManager();

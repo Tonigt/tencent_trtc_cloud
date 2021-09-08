@@ -1,6 +1,9 @@
-import TXLiteAVSDK_TRTC
+//import TXLiteAVSDK_TRTC
 import Flutter
 import FURenderKit
+
+
+//#import <FURenderKit/FUGLContext.h>
 
 
 public class TRTCCloudVideoPlatformViewFactory : NSObject,FlutterPlatformViewFactory{
@@ -113,6 +116,7 @@ public class TRTCCloudVideoPlatformView : NSObject,FlutterPlatformView{
     public func updateRemoteView(call: FlutterMethodCall, result: @escaping FlutterResult) {
 		if let userId = CommonUtils.getParamByKey(call: call, result: result, param: "userId") as? String, 
 			let streamType = CommonUtils.getParamByKey(call: call, result: result, param: "streamType") as? Int {
+            
             TRTCCloud.sharedInstance()?.updateRemoteView(self.remoteView, streamType: TRTCVideoStreamType(rawValue: streamType)!, forUser: userId);
 			result(nil);
 		}
@@ -121,33 +125,42 @@ public class TRTCCloudVideoPlatformView : NSObject,FlutterPlatformView{
 
 
 extension TRTCCloudVideoPlatformView: TRTCVideoRenderDelegate {
-    public func onRenderVideoFrame(_ frame: TRTCVideoFrame, userId: String?, streamType: TRTCVideoStreamType) {
+    
+    public func onPreProcessTexture(_ texture: GLuint, width: CGFloat, height: CGFloat) -> GLuint {
         
-        let input: FURenderInput = FURenderInput()
+        if let context = EAGLContext.current(), FUGLContext.share().currentGLContext != context {
+            FUGLContext.share().setCustom(context)
+        }
+        let input = FURenderInput()
         input.renderConfig.imageOrientation = FUImageOrientationUP
-        input.pixelBuffer = frame.pixelBuffer
+//        input.renderConfig.isFromFrontCamera =
+        input.renderConfig.stickerFlipH = true
+        let tex = FUTexture(ID: texture, size: CGSize(width: width, height: height))
+        input.texture = tex
         input.renderConfig.gravityEnable = true
-        input.renderConfig.readBackToPixelBuffer = true
-        FURenderKit.share().render(with: input)
-//        fuGetSystemError()
-
+        input.renderConfig.textureTransform = CCROT0_FLIPVERTICAL
+        let outPut = FURenderKit.share().render(with: input)
+        
+//        if let op = outPut {
+//            return op.texture.ID
+//        }
+        return outPut.texture.ID
+//        return texture
+        
+        
+//        input.renderConfig.isFromFrontCamera = _livePusher.frontCamera;
+//        input.renderConfig.isFromMirroredCamera =_livePusher.frontCamera;
+        
+    }
+//    public func onRenderVideoFrame(_ frame: TRTCVideoFrame, userId: String?, streamType: TRTCVideoStreamType) {
 //
-//        let pixelBuffer: CVPixelBuffer? = frame.pixelBuffer
 //        let input: FURenderInput = FURenderInput()
 //        input.renderConfig.imageOrientation = FUImageOrientationUP
-//        input.renderConfig.isFromFrontCamera = txCloudManager.getDeviceManager().isFrontCamera()
 //        input.pixelBuffer = frame.pixelBuffer
 //        input.renderConfig.gravityEnable = true
-//        let outPut: FURenderOutput = FURenderKit.share().render(with: input)
-//        let resultBuffer = outPut.pixelBuffer
-//        if frame.pixelFormat == ._NV12 {
-//            NV12PixelBufferCopySrcBuffer(resultBuffer!, pixelBuffer!)
-//        }else if frame.pixelFormat == ._32BGRA {
-//            rgbPixelBufferCopySrcBuffer(resultBuffer!, pixelBuffer!)
-//        }else {
-//
-//        }
-    }
+//        input.renderConfig.readBackToPixelBuffer = true
+//        FURenderKit.share().render(with: input)
+//    }
     
     func NV12PixelBufferCopySrcBuffer(_ srcPixelBuffer: CVPixelBuffer, _ despixelBuffer: CVPixelBuffer) {
         let flags = CVPixelBufferLockFlags(rawValue: 0)

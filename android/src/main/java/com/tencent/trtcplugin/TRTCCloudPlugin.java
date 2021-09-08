@@ -20,6 +20,7 @@ import com.faceunity.core.model.makeup.SimpleMakeup;
 import com.faceunity.core.utils.ThreadHelper;
 import com.google.gson.Gson;
 import com.tencent.faceunity.FURenderer;
+
 import com.tencent.liteav.audio.TXAudioEffectManager;
 import com.tencent.liteav.beauty.TXBeautyManager;
 import com.tencent.liteav.device.TXDeviceManager;

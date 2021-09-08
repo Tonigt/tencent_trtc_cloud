@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import TXLiteAVSDK_TRTC
+//import TXLiteAVSDK_Smart
+//import TXLiteAVSDK_TRTC
 
 class Listener: NSObject, TRTCCloudDelegate {
 	/**
@@ -99,10 +100,13 @@ class Listener: NSObject, TRTCCloudDelegate {
 	public func onUserAudioAvailable(_ userId: String, available: Bool) {
 		TencentTRTCCloud.invokeListener(type: ListenerType.onUserAudioAvailable, params: ["userId": userId, "available": available]);
 	}
+    
+    
 	
 	/**
 	* 开始渲染本地或远程用户的首帧画面。
 	*/
+
 	public func onFirstVideoFrame(_ userId: String, streamType: TRTCVideoStreamType, width: Int32, height: Int32) {
 		TencentTRTCCloud.invokeListener(type: ListenerType.onFirstVideoFrame, params: ["userId": userId, "streamType": streamType.rawValue, "width": width, "height": height]);
 	}

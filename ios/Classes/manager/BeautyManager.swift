@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import TXLiteAVSDK_TRTC
+//import TXLiteAVSDK_TRTC
 
 class BeautyManager {
     private var tRegistrar: FlutterPluginRegistrar?;

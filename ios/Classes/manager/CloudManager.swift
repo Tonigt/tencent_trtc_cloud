@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import TXLiteAVSDK_TRTC
+//import TXLiteAVSDK_TRTC
 import FURenderKit
 
 class CloudManager: NSObject {

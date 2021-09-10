@@ -563,7 +563,7 @@ class TRTCParams {
   ///【字段含义】房间号码 [必填] ，在同一个房间里的用户（userId）可以彼此看到对方并进行视频通话
   ///
   /// 【推荐取值】取值范围：1 - 4294967294。
-  int roomId; // 房间号
+  String roomId; // 房间号
 
   /// 字符串房间号码，在同一个房间内的用户（userId）可以看到彼此并进行视频通话。
   ///
@@ -610,7 +610,7 @@ class TRTCParams {
       {this.sdkAppId = 0,
       this.userId = "",
       this.userSig = "",
-      this.roomId = 0,
+      this.roomId = "",
       this.strRoomId = "",
       this.role = TRTCCloudDef.TRTCRoleAnchor,
       this.streamId = "",

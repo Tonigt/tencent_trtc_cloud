@@ -89,16 +89,16 @@ public class TRTCCloudVideoPlatformView : NSObject,FlutterPlatformView{
 	
 	public func startLocalPreview(call: FlutterMethodCall, result: @escaping FlutterResult) {
 		if let frontCamera = CommonUtils.getParamByKey(call: call, result: result, param: "frontCamera") as? Bool{
-            let data = try? JSONSerialization.data(withJSONObject: [
-                "api": "setCustomRenderMode",
-                "params": ["mode": 1]
-            ], options: [])
-            let str = String(data: data!, encoding: .utf8)
-//            FUManager.share().flipx = true
-//            FUManager.share().trackFlipx = true
-//            FUManager.share().isRender = true
-            
-            TRTCCloud.sharedInstance()?.callExperimentalAPI(str)
+//            let data = try? JSONSerialization.data(withJSONObject: [
+//                "api": "setCustomRenderMode",
+//                "params": ["mode": 1]
+//            ], options: [])
+//            let str = String(data: data!, encoding: .utf8)
+////            FUManager.share().flipx = true
+////            FUManager.share().trackFlipx = true
+////            FUManager.share().isRender = true
+//
+//            TRTCCloud.sharedInstance()?.callExperimentalAPI(str)
             TRTCCloud.sharedInstance()?.setLocalVideoRenderDelegate(self, pixelFormat: ._NV12, bufferType: .pixelBuffer)
             TRTCCloud.sharedInstance()?.startLocalAudio(.default)
             TRTCCloud.sharedInstance()?.setGSensorMode(.disable)

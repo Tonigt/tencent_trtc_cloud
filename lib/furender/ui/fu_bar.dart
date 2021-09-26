@@ -9,6 +9,8 @@
 part of furender;
 
 class FuRenderBar extends StatefulWidget {
+  FuRenderBar({this.atIndex});
+  final int? atIndex;
   @override
   createState()=> _FuRenderBarState();
 }
@@ -42,6 +44,10 @@ class _FuRenderBarState extends State<FuRenderBar> with TickerProviderStateMixin
       milliseconds: 300
     ));
     _opacity = Tween(begin: 0.0, end: 1.0).animate(_opacityController);
+    if (widget.atIndex != null) {
+      _FuType type = _FuType.values[widget.atIndex!];
+      _onAnimation(type);
+    }
   }
 
   @override
@@ -104,16 +110,7 @@ class _FuRenderBarState extends State<FuRenderBar> with TickerProviderStateMixin
                 _datasource.onSelect(e.type);
                 return;
               }
-              if (_positionController.status == AnimationStatus.completed) {
-                _positionController.reverse();
-                _opacityController.reverse();
-                _datasource.onBarHide();
-              }else {
-                _isOffstage = false;
-                _positionController.forward();
-                _opacityController.forward();
-                _datasource.onSelect(e.type);
-              }
+              _onAnimation(e.type);
             },
           ), left: 0, right: 0, bottom: 0)
         ]
@@ -124,6 +121,19 @@ class _FuRenderBarState extends State<FuRenderBar> with TickerProviderStateMixin
   /// 更新状态
   void updateState(){
     setState(() {});
+  }
+
+  void _onAnimation(e){
+    if (_positionController.status == AnimationStatus.completed) {
+      _positionController.reverse();
+      _opacityController.reverse();
+      _datasource.onBarHide();
+    }else {
+      _isOffstage = false;
+      _positionController.forward();
+      _opacityController.forward();
+      _datasource.onSelect(e);
+    }
   }
 
   @override

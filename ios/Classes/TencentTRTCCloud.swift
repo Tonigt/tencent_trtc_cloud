@@ -13,6 +13,8 @@ enum FuRenderChannel: String {
     case filter
     case makeUp
     case bodyBeauty
+    
+    case setLicense
 }
 
 public class TencentTRTCCloud: NSObject, FlutterPlugin, TRTCCloudDelegate {
@@ -454,6 +456,11 @@ public class TencentTRTCCloud: NSObject, FlutterPlugin, TRTCCloudDelegate {
         case FuRenderChannel.bodyBeauty.rawValue:
             if let map = call.arguments as? [String: Any] {
                 bodyBeauty(map: map)
+            }
+            result(nil)
+        case FuRenderChannel.setLicense.rawValue:
+            if let map = call.arguments as? [String: String], let url = map["url"], let key = map["key"] {
+                TXLiveBase.setLicenceURL(url, key: key)
             }
             result(nil)
 		default:

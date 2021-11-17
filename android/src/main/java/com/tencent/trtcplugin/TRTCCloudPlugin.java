@@ -5,27 +5,23 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
-import android.os.HandlerThread;
-import android.view.Surface;
-import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 
 import com.faceunity.core.entity.FUBundleData;
-import com.faceunity.core.enumeration.FUAITypeEnum;
 import com.faceunity.core.faceunity.FUAIKit;
 import com.faceunity.core.faceunity.FURenderKit;
 import com.faceunity.core.model.facebeauty.FaceBeauty;
 import com.faceunity.core.model.makeup.SimpleMakeup;
-import com.faceunity.core.utils.ThreadHelper;
 import com.google.gson.Gson;
 import com.tencent.faceunity.FURenderer;
 
 import com.tencent.liteav.audio.TXAudioEffectManager;
 import com.tencent.liteav.beauty.TXBeautyManager;
 import com.tencent.liteav.device.TXDeviceManager;
+//import com.tencent.rtmp.TXLiveBase;
+import com.tencent.rtmp.TXLiveBase;
 import com.tencent.rtmp.TXLog;
-import com.tencent.rtmp.ui.TXCloudVideoView;
 import com.tencent.trtc.TRTCCloud;
 import com.faceunity.core.model.bodyBeauty.BodyBeauty;
 import com.tencent.trtc.TRTCCloudDef;
@@ -35,9 +31,7 @@ import com.tencent.trtcplugin.util.CommonUtil;
 import com.tencent.trtcplugin.view.TRTCCloudVideoPlatformView;
 import com.tencent.trtcplugin.view.TRTCCloudVideoSurfaceView;
 import com.tencent.trtcplugin.view.CustomRenderVideoFrame;
-import com.tencent.faceunity.checkbox.CheckGroupPlatformView;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -47,7 +41,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -212,6 +205,15 @@ public class TRTCCloudPlugin implements FlutterPlugin, MethodCallHandler {
         }catch (Exception e) {
 
         }
+    }
+
+    private void setLicense(MethodCall call, Result result){
+        HashMap map = (HashMap) call.arguments();
+        //map["url"], let key = map["key"]
+        String url = (String) map.get("url");
+        String key = (String) map.get("key");
+        TXLiveBase.getInstance().setLicence(trtcContext, url, key);
+        result.success(null);
     }
 
     private void resetValue(){
@@ -769,6 +771,7 @@ public class TRTCCloudPlugin implements FlutterPlugin, MethodCallHandler {
     private void muteAllRemoteVideoStreams(MethodCall call, Result result) {
         boolean mute = CommonUtil.getParam(call, result, "mute");
         trtcCloud.muteAllRemoteVideoStreams(mute);
+//        TXLiveBase.getInstance().setLicence(trtcContext, "", "");
         result.success(null);
     }
 

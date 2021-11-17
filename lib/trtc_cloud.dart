@@ -51,6 +51,14 @@ class TRTCCloud with FurenderImplement {
     listener!.removeListener(func);
   }
 
+  /// 设置证书
+  Future<void> setLicense({required String url, required String key}) {
+    return _channel.invokeMethod("setLicense", {
+      "url": url,
+      "key": key
+    });
+  }
+
   /// 进入房间
   ///
   /// 调用接口后，您会收到来自 TRTCCloudListener 中的 onEnterRoom(result) 回调：
